@@ -26,7 +26,7 @@ const items = [
   { id:'mini2048', title:'Slide to Merge (Mini-2048)', Comp: Mini2048, logo:'🔢' },
 ]
 
-// test change 4
+// test change 6
 
 export default function App(){
   const [active, setActive] = useState('home')
