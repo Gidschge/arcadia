@@ -26,6 +26,8 @@ const items = [
   { id:'mini2048', title:'Slide to Merge (Mini-2048)', Comp: Mini2048, logo:'🔢' },
 ]
 
+// test change
+
 export default function App(){
   const [active, setActive] = useState('home')
   const Comp = items.find(i=>i.id===active)?.Comp ?? (()=>null)
