@@ -1,68 +1,139 @@
-import React, { useState, Suspense } from 'react'
-import Home from './Home.jsx'
-import Ads from './Ads.jsx'
-import Leaderboard from './Leaderboard.jsx'
-import Jumper from './games/Jumper.jsx'
-import Stopper from './games/Stopper.jsx'
-import Dodge from './games/Dodge.jsx'
-import Stack from './games/Stack.jsx'
-import Knives from './games/Knives.jsx'
-import Runaway from './games/Runaway.jsx'
-import Balloon from './games/Balloon.jsx'
-import Clicker from './games/Clicker.jsx'
-import Simon from './games/Simon.jsx'
-import Mini2048 from './games/Mini2048.jsx'
+import React, { useState, useEffect } from "react";
+import { auth } from "./firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "firebase/auth";
 
-const items = [
-  { id:'jumper', title:'One-Button Jumper', Comp: Jumper, logo:'🟦' },
-  { id:'stopper', title:'Stop at the Right Time', Comp: Stopper, logo:'🎯' },
-  { id:'dodge', title:'Falling Blocks Dodge', Comp: Dodge, logo:'🧱' },
-  { id:'stack', title:'Stack Tower', Comp: Stack, logo:'🏗️' },
-  { id:'knives', title:'Knife Thrower', Comp: Knives, logo:'🔪' },
-  { id:'runaway', title:'Runaway Button', Comp: Runaway, logo:'🏃‍♂️' },
-  { id:'balloon', title:"Don't Explode the Balloon", Comp: Balloon, logo:'🎈' },
-  { id:'clicker', title:'Clicker Lite', Comp: Clicker, logo:'🥔' },
-  { id:'simon', title:'Memory (Simon)', Comp: Simon, logo:'🟩' },
-  { id:'mini2048', title:'Slide to Merge (Mini-2048)', Comp: Mini2048, logo:'🔢' },
-]
+function App() {
+  const [user, setUser] = useState(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-export default function App(){
-  const [active, setActive] = useState('home')
-  const Comp = items.find(i=>i.id===active)?.Comp ?? (()=>null)
-  const year = new Date().getFullYear()
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleRegister = async () => {
+    try {
+      const res = await createUserWithEmailAndPassword(auth, email, password);
+      setMessage(`✅ Konto erstellt: ${res.user.email}`);
+    } catch (err) {
+      setMessage(`❌ Fehler: ${err.message}`);
+    }
+  };
+
+  const handleLogin = async () => {
+    try {
+      const res = await signInWithEmailAndPassword(auth, email, password);
+      setMessage(`✅ Angemeldet als: ${res.user.email}`);
+    } catch (err) {
+      setMessage(`❌ Fehler: ${err.message}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    setMessage("✅ Abgemeldet");
+  };
+
+  // Container-Styles passend zum Mainpage-Design
+  const containerStyle = {
+    backgroundColor: "#0f163f", // dunkles Blau
+    color: "white",
+    fontFamily: "Arial, sans-serif",
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "2rem",
+  };
+
+  const cardStyle = {
+    backgroundColor: "#1b2360", // etwas helleres Blau für Boxen
+    borderRadius: "12px",
+    padding: "2rem",
+    width: "320px",
+    textAlign: "center",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+  };
+
+  const inputStyle = {
+    width: "90%",
+    padding: "0.5rem",
+    margin: "0.5rem 0",
+    borderRadius: "8px",
+    border: "none",
+  };
+
+  const buttonStyle = {
+    width: "45%",
+    padding: "0.5rem",
+    margin: "0.5rem",
+    borderRadius: "8px",
+    border: "none",
+    backgroundColor: "#4b61ff",
+    color: "white",
+    cursor: "pointer",
+    fontWeight: "bold",
+  };
+
+  const messageStyle = {
+    marginTop: "1rem",
+    fontWeight: "bold",
+    color: message.startsWith("✅") ? "#0f0" : "#f55",
+  };
+
+  if (user) {
+    return (
+      <div style={containerStyle}>
+        <div style={cardStyle}>
+          <h2>Willkommen, {user.email}!</h2>
+          <button style={buttonStyle} onClick={handleLogout}>
+            Abmelden
+          </button>
+          <p style={messageStyle}>{message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <header>
-        <div className="header-inner">
-          <form className="search"><input placeholder="Search" aria-label="Search"/></form>
-          <h1 className="brand" onClick={()=>setActive('home')} style={{cursor:'pointer'}}>Arcadia</h1>
-          <div className="account">
-            <span>Coins: <strong>0</strong></span>
-            <a className="btn" href="#" onClick={(e)=>e.preventDefault()}>Login</a>
-          </div>
+    <div style={containerStyle}>
+      <div style={cardStyle}>
+        <h2>Login / Registrierung</h2>
+        <input
+          style={inputStyle}
+          type="email"
+          placeholder="E-Mail"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          style={inputStyle}
+          type="password"
+          placeholder="Passwort"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <div>
+          <button style={buttonStyle} onClick={handleRegister}>
+            Registrieren
+          </button>
+          <button style={buttonStyle} onClick={handleLogin}>
+            Anmelden
+          </button>
         </div>
-      </header>
-
-      <main>
-        <aside className="sidebar left">
-          <Ads onOpen={setActive} />
-        </aside>
-
-        <section id="stage">
-          <Suspense fallback={<div style={{padding:20}}>Lade …</div>}>
-            {active==='home'
-              ? <Home items={items} onOpen={setActive} />
-              : <Comp/>}
-          </Suspense>
-        </section>
-
-        <aside className="sidebar right">
-          <Leaderboard />
-        </aside>
-      </main>
-
-      <footer>© {year} Arcadia</footer>
-    </>
-  )
+        <p style={messageStyle}>{message}</p>
+      </div>
+    </div>
+  );
 }
+
+export default App;
