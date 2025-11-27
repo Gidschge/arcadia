@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState } from "react"
-import { db } from "../firebaseConfig" // keep this import
-import { ref, get, set } from "firebase/database"
+import { getHighscore, saveHighscore } from "../utils/highscore"
 
 export default function Jumper() {
   const canvasRef = useRef(null)
   const [score, setScore] = useState(0)
   const [best, setBest] = useState(0)
-  const userId = "exampleUser" // temporary placeholder
+  const gameId = "jumper"
 
   useEffect(() => {
     let raf
@@ -18,38 +17,13 @@ export default function Jumper() {
     let t = 0
     let s = 0
     let obstacles = []
-    const gameId = "jumper"
 
-    // ---------- inline highscore functions ----------
-    const getHighscore = async () => {
-      try {
-        const snapshot = await get(ref(db, `scores/${userId}/${gameId}`))
-        if (snapshot.exists()) return snapshot.val().highscore || 0
-      } catch (err) {
-        console.error("Error loading highscore:", err)
-      }
-      return 0
-    }
-
-    const saveHighscore = async (scoreToSave) => {
-      try {
-        await set(ref(db, `scores/${userId}/${gameId}`), {
-          highscore: scoreToSave,
-          updatedAt: Date.now()
-        })
-      } catch (err) {
-        console.error("Error saving highscore:", err)
-      }
-    }
-    // --------------------------------------------------
-
-    // Load stored best score once
-    getHighscore().then(setBest)
+    getHighscore(gameId).then(setBest)
 
     function reset() {
       if (s > best) {
         setBest(s)
-        saveHighscore(s)
+        saveHighscore(gameId, s)
       }
       s = 0
       player.y = 250
@@ -122,7 +96,7 @@ export default function Jumper() {
       window.removeEventListener("keydown", handleKey)
       c.removeEventListener("mousedown", handleClick)
     }
-  }, [best])
+  }, [best, gameId])
 
   return (
       <div>
