@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react'
+import { getHighscore, saveHighscore } from "../utils/highscore"
 
 export default function Mini2048(){
   const [cells, setCells] = useState(new Array(16).fill(0))
   const [score, setScore] = useState(0)
+  const [best, setBest] = useState(0)
+  const gameId = "mini2048"
 
   const drawCells = ()=>cells.map((v,i)=> <div className="tile" key={i} style={{background: v?`rgba(122,162,255,${Math.min(0.1+Math.log2(v)/6,0.95)})`:'#0b1a4a'}}>{v||''}</div> )
 
@@ -16,7 +19,8 @@ export default function Mini2048(){
 
   useEffect(()=>{ // init
     let a = new Array(16).fill(0); spawn(a); spawn(a); setCells(a)
-  }, [])
+    getHighscore(gameId).then(setBest)
+  }, [gameId])
 
   const idx = (r,c)=> r*4+c
 
@@ -53,13 +57,25 @@ export default function Mini2048(){
     }
     window.addEventListener('keydown',onKey)
     return ()=>window.removeEventListener('keydown',onKey)
-  })
+  }, [cells, score])
 
-  const reset=()=>{ let a=new Array(16).fill(0); spawn(a); spawn(a); setCells(a); setScore(0) }
+  const reset=()=>{
+    if (score > best) {
+      setBest(score)
+      saveHighscore(gameId, score)
+    }
+    let a=new Array(16).fill(0); spawn(a); spawn(a); setCells(a); setScore(0)
+  }
 
   return (<div>
-    <div className="controls"><span className="pill">Steuerung: Pfeiltasten</span><span className="pill">Score: <span className="score">{score}</span></span></div>
+    <div className="controls">
+      <span className="pill">Steuerung: Pfeiltasten</span>
+      <span className="pill">Score: <span className="score">{score}</span></span>
+      <span className="pill">Best: <span className="best">{best}</span></span>
+    </div>
     <div className="grid-2048">{drawCells()}</div>
-    <div style={{textAlign:'center',marginTop:10}}><button className="btn" onClick={reset}>Neu</button></div>
+    <div style={{textAlign:'center',marginTop:10}}>
+      <button className="btn" onClick={reset}>Neu</button>
+    </div>
   </div>)
 }
