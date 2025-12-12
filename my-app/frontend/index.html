@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Arcadia – MiniGames Prototype</title>
+<style>
+:root{
+  --bg:#08083a;--panel:#1a3d8a;--panel-dark:#0d1e52;--text:#e8efff;--muted:#b6c4ff;--accent:#7aa2ff;--tile:#0b1a4a;--radius:16px;--gap:14px;--shadow:0 10px 24px rgba(0,0,0,.35)
+}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,Segoe UI,Roboto,Arial}
+header{position:sticky;top:0;background:var(--panel-dark);box-shadow:var(--shadow);z-index:2}
+.header-inner{max-width:1100px;margin:0 auto;padding:12px 16px;display:grid;grid-template-columns:1fr auto 1fr;gap:var(--gap);align-items:center}
+.brand{margin:0;text-align:center;font-size:clamp(26px,4vw,42px)}
+.search input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid transparent;background:var(--panel);color:var(--text)}
+.account{justify-self:end;display:flex;gap:10px;align-items:center}
+.btn{background:var(--accent);color:#051133;border:0;border-radius:999px;padding:8px 12px;font-weight:700;text-decoration:none}
+main{max-width:1100px;margin:18px auto;padding:0 16px 24px;display:grid;grid-template-columns:220px 1fr;gap:var(--gap)}
+nav{background:var(--panel);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);height:max-content;position:sticky;top:78px}
+nav h2{margin:6px 6px 10px;font-size:18px;color:var(--muted)}
+nav button{width:100%;margin:6px 0;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:#0f2764;color:var(--text);cursor:pointer;text-align:left}
+nav button:hover{filter:brightness(1.05)}
+section#stage{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);min-height:540px;padding:12px;position:relative}
+.game{display:none}
+.game.active{display:block}
+.canvas-wrap{display:flex;justify-content:center}
+canvas{background:#051133;border-radius:12px;border:1px solid rgba(255,255,255,.08)}
+.controls{margin:8px 0 4px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.controls .pill{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.25);color:var(--muted);font-size:13px}
+.score{font-weight:700}
+hr.sep{border:0;border-top:1px solid rgba(255,255,255,.1);margin:12px 0}
+.small{color:var(--muted);font-size:14px}
+.pad4{display:grid;grid-template-columns:repeat(2,120px);gap:14px;justify-content:center;margin-top:14px}
+.pad{width:120px;height:120px;border-radius:16px;filter:brightness(.9);opacity:.95;transition:filter .08s, transform .06s}
+.pad.active{filter:brightness(1.3);transform:scale(1.02)}
+.pad:nth-child(1){background:#2ecc71}.pad:nth-child(2){background:#e74c3c}.pad:nth-child(3){background:#3498db}.pad:nth-child(4){background:#f1c40f}
+.grid-2048{display:grid;grid-template-columns:repeat(4,70px);gap:8px;justify-content:center;margin-top:10px}
+.tile{width:70px;height:70px;border-radius:10px;background:#0b1a4a;display:flex;align-items:center;justify-content:center;font-weight:800}
+footer{color:var(--muted);text-align:center;padding:16px}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <form class="search"><input placeholder="Search" aria-label="Search"/></form>
+    <h1 class="brand">Arcadia</h1>
+    <div class="account"><span>Coins: <strong id="coins">0</strong></span><a class="btn" href="#" id="loginBtn">Login</a></div>
+  </div>
+</header>
+
+<main>
+  <nav>
+    <h2>Spiele</h2>
+    <button data-game="jumper">One-Button Jumper</button>
+    <button data-game="stopper">Stop at the Right Time</button>
+    <button data-game="dodge">Falling Blocks Dodge</button>
+    <button data-game="stack">Stack Tower</button>
+    <button data-game="knives">Knife Thrower</button>
+    <button data-game="runaway">Runaway Button</button>
+    <button data-game="balloon">Don't Explode the Balloon</button>
+    <button data-game="clicker">Clicker Lite</button>
+    <button data-game="simon">Memory (Simon)</button>
+    <button data-game="mini2048">Slide to Merge (Mini‑2048)</button>
+  </nav>
+
+  <section id="stage">
+
+    <!-- One-Button Jumper -->
+    <div class="game active" id="jumper">
+      <div class="controls"><span class="pill">Steuerung: <b>Leertaste/Klick</b> = Springen</span><span class="pill">Score: <span class="score" id="jumperScore">0</span></span></div>
+      <div class="canvas-wrap"><canvas id="jumperCanvas" width="720" height="360"></canvas></div>
+      <p class="small">Laufe automatisch, springe über Hindernisse. Kollision = Restart.</p>
+    </div>
+
+    <!-- Stop at the Right Time -->
+    <div class="game" id="stopper">
+      <div class="controls"><span class="pill">Steuerung: <b>Leertaste/Klick</b> = Stop</span><span class="pill">Level: <span class="score" id="stopperLvl">1</span></span></div>
+      <div class="canvas-wrap"><canvas id="stopperCanvas" width="720" height="180"></canvas></div>
+      <p class="small">Stoppe den Zeiger im Zielbereich. Jede Runde wird der Zielbereich kleiner.</p>
+    </div>
+
+    <!-- Falling Blocks Dodge -->
+    <div class="game" id="dodge">
+      <div class="controls"><span class="pill">Steuerung: <b>← →</b> bewegen</span><span class="pill">Score: <span class="score" id="dodgeScore">0</span></span></div>
+      <div class="canvas-wrap"><canvas id="dodgeCanvas" width="720" height="360"></canvas></div>
+    </div>
+
+    <!-- Stack Tower -->
+    <div class="game" id="stack">
+      <div class="controls"><span class="pill">Steuerung: <b>Klick/Space</b> = Block droppen</span><span class="pill">Höhe: <span class="score" id="stackHeight">0</span></span></div>
+      <div class="canvas-wrap"><canvas id="stackCanvas" width="480" height="480"></canvas></div>
+    </div>
+
+    <!-- Knife Thrower -->
+    <div class="game" id="knives">
+      <div class="controls"><span class="pill">Steuerung: <b>Klick/Space</b> = Messer werfen</span><span class="pill">Treffer: <span class="score" id="knifeHits">0</span></span></div>
+      <div class="canvas-wrap"><canvas id="knifeCanvas" width="480" height="480"></canvas></div>
+      <p class="small">Triff die rotierende Zielscheibe, ohne andere Messer zu treffen.</p>
+    </div>
+
+    <!-- Runaway Button -->
+    <div class="game" id="runaway">
+      <div class="controls"><span class="pill">Ziel: Button 5x klicken</span><span class="pill">Klicks: <span class="score" id="runClicks">0</span>/5</span></div>
+      <div style="height:380px;position:relative">
+        <button id="escapeBtn" class="btn" style="position:absolute;left:40%;top:40%">Klick mich!</button>
+      </div>
+    </div>
+
+    <!-- Balloon -->
+    <div class="game" id="balloon">
+      <div class="controls"><span class="pill">Halte <b>Maustaste/Space</b> zum Aufblasen, loslassen = sichern</span><span class="pill">Punkte: <span class="score" id="balloonScore">0</span></span></div>
+      <div class="canvas-wrap"><canvas id="balloonCanvas" width="540" height="360"></canvas></div>
+    </div>
+
+    <!-- Clicker Lite -->
+    <div class="game" id="clicker">
+      <div class="controls"><span class="pill">Einfach klicken :)</span><span class="pill">Level: <span class="score" id="clickerLvl">Kartoffel</span></span></div>
+      <div class="canvas-wrap" style="flex-direction:column;gap:12px">
+        <button id="clickBtn" class="btn" style="font-size:20px;padding:16px 24px">🥔 Click!</button>
+        <div>Clicks: <b id="clicks">0</b></div>
+      </div>
+    </div>
+
+    <!-- Simon -->
+    <div class="game" id="simon">
+      <div class="controls"><span class="pill">Merke die Reihenfolge</span><span class="pill">Runde: <span class="score" id="simonRound">0</span></span></div>
+      <div class="pad4">
+        <div class="pad" data-id="0"></div>
+        <div class="pad" data-id="1"></div>
+        <div class="pad" data-id="2"></div>
+        <div class="pad" data-id="3"></div>
+      </div>
+      <div style="text-align:center;margin-top:10px"><button id="simonStart" class="btn">Start</button></div>
+    </div>
+
+    <!-- Mini 2048 -->
+    <div class="game" id="mini2048">
+      <div class="controls"><span class="pill">Steuerung: Pfeiltasten</span><span class="pill">Score: <span class="score" id="mScore">0</span></span></div>
+      <div class="grid-2048" id="grid2048"></div>
+      <div style="text-align:center;margin-top:10px"><button id="mReset" class="btn">Neu</button></div>
+    </div>
+
+  </section>
+</main>
+<footer>© <span id="year"></span> Arcadia</footer>
+
+<script>
+// Helper UI
+const yearEl=document.getElementById('year');yearEl.textContent=new Date().getFullYear();
+const games=[...document.querySelectorAll('nav button')];
+const sections={};
+[...document.querySelectorAll('.game')].forEach(g=>sections[g.id]=g);
+
+games.forEach(btn=>btn.addEventListener('click',()=>{
+  const id=btn.dataset.game;Object.values(sections).forEach(s=>s.classList.remove('active'));sections[id].classList.add('active');if(initMap[id]) initMap[id]();
+}));
+
+/* ===================== 1) ONE-BUTTON JUMPER ===================== */
+let jumperInitd=false;function initJumper(){if(jumperInitd) return;jumperInitd=true;const c=document.getElementById('jumperCanvas');const x=c.getContext('2d');let t=0,score=0;const scoreEl=document.getElementById('jumperScore');
+const player={x:80,y:250,w:24,h:24,vy:0,onGround:false};const g=0.7;let obstacles=[];function reset(){score=0;player.y=250;player.vy=0;obstacles=[];t=0}
+function spawn(){const gap= Math.random()*60+40;obstacles.push({x:c.width+20,y:290,w:30+Math.random()*30,h:30});if(Math.random()<.5) obstacles.push({x:c.width+80,y:300,w:18,h:20})}
+function jump(){if(player.onGround){player.vy=-12;player.onGround=false}}
+addEventListener('keydown',e=>{if(!sections.jumper.classList.contains('active')) return;if(e.code==='Space'){e.preventDefault();jump()}});
+c.addEventListener('mousedown',()=>{if(sections.jumper.classList.contains('active')) jump()});
+function step(){x.clearRect(0,0,c.width,c.height); // ground
+x.fillStyle='#0b1a4a';x.fillRect(0,300,c.width,60); // player physics
+player.vy+=g;player.y+=player.vy;if(player.y>276){player.y=276;player.vy=0;player.onGround=true}
+// obstacles
+if(t%110===0) spawn();obstacles.forEach(o=>{o.x-=4+(score/300)});
+obstacles=obstacles.filter(o=>o.x+o.w>0);
+// draw obstacles
+x.fillStyle='#e74c3c';obstacles.forEach(o=>x.fillRect(o.x,o.y,o.w,o.h));
+// draw player
+x.fillStyle='#7aa2ff';x.fillRect(player.x,player.y,player.w,player.h);
+// collision
+for(const o of obstacles){if(player.x<o.x+o.w&&player.x+player.w>o.x&&player.y<o.y+o.h&&player.y+player.h>o.y){reset();break}}
+score++;scoreEl.textContent=score; t=requestAnimationFrame(step)}requestAnimationFrame(step)}
+
+/* ===================== 2) STOPPER ===================== */
+let stopperInitd=false;function initStopper(){if(stopperInitd) return;stopperInitd=true;const c=document.getElementById('stopperCanvas');const x=c.getContext('2d');let pos=0,dir=1,playing=true,lvl=1;const lvlEl=document.getElementById('stopperLvl');
+function targetWidth(){return Math.max(40,140- (lvl-1)*14)}
+function draw(){x.clearRect(0,0,c.width,c.height); // track
+x.fillStyle='#0b1a4a';x.fillRect(40,70,c.width-80,40); // target
+const tw=targetWidth();const tx= c.width/2 - tw/2; x.fillStyle='#2ecc71';x.fillRect(tx,70,tw,40); // slider
+const sx=40+pos*(c.width-80-10);x.fillStyle='#eaeaea';x.fillRect(sx,60,10,60);}
+function tick(){if(!playing) return;pos+=0.012*dir;if(pos>1||pos<0){dir*=-1;pos=Math.max(0,Math.min(1,pos))}draw();requestAnimationFrame(tick)}
+function stop(){if(!playing) return;playing=false;const tw=targetWidth();const tx=c.width/2 - tw/2;const sx=40+pos*(c.width-80-10);if(sx>tx && sx<tx+tw){lvl++;lvlEl.textContent=lvl;dir=1;pos=0;playing=true;tick()}else{lvl=1;lvlEl.textContent=lvl;dir=1;pos=0;playing=true;tick()}}
+addEventListener('keydown',e=>{if(!sections.stopper.classList.contains('active')) return;if(e.code==='Space'){e.preventDefault();stop()}});
+c.addEventListener('mousedown',()=>sections.stopper.classList.contains('active')&&stop());tick()}
+
+/* ===================== 3) DODGE ===================== */
+let dodgeInitd=false;function initDodge(){if(dodgeInitd) return;dodgeInitd=true;const c=document.getElementById('dodgeCanvas');const x=c.getContext('2d');const scoreEl=document.getElementById('dodgeScore');
+let player={x:c.width/2-15,y:c.height-40,w:30,h:30},left=false,right=false,blocks=[],tick=0,score=0;addEventListener('keydown',e=>{if(!sections.dodge.classList.contains('active')) return;if(e.key==='ArrowLeft') left=true;if(e.key==='ArrowRight') right=true});addEventListener('keyup',e=>{if(e.key==='ArrowLeft') left=false;if(e.key==='ArrowRight') right=false});
+function spawn(){blocks.push({x:Math.random()*(c.width-30),y:-20,w:20+Math.random()*40,h:20+Math.random()*20,s:2+Math.random()*3+score/300});}
+function reset(){blocks=[];score=0;player.x=c.width/2-15}
+(function loop(){x.clearRect(0,0,c.width,c.height); // player
+if(left) player.x-=5;if(right) player.x+=5;player.x=Math.max(0,Math.min(c.width-player.w,player.x));x.fillStyle='#7aa2ff';x.fillRect(player.x,player.y,player.w,player.h);
+// blocks
+if(tick%24===0) spawn();blocks.forEach(b=>{b.y+=b.s});blocks=blocks.filter(b=>b.y<c.height+10);
+// draw
+x.fillStyle='#e74c3c';blocks.forEach(b=>x.fillRect(b.x,b.y,b.w,b.h));
+// collision
+for(const b of blocks){if(player.x<b.x+b.w && player.x+player.w>b.x && player.y<b.y+b.h && player.y+player.h>b.y){reset();break}}
+score++;scoreEl.textContent=score;tick++;requestAnimationFrame(loop)})()}
+
+/* ===================== 4) STACK TOWER ===================== */
+let stackInitd=false;function initStack(){if(stackInitd) return;stackInitd=true;const c=document.getElementById('stackCanvas');const x=c.getContext('2d');const hEl=document.getElementById('stackHeight');
+let base={x:120,y:c.height-30,w:240,h:20};let current={x:0,y:base.y-20,w:base.w,h:20,dir:1};let tower=[base];let height=0;function drop(){ // compute overlap
+const prev=tower[tower.length-1];const left=Math.max(prev.x,current.x);const right=Math.min(prev.x+prev.w,current.x+current.w);const overlap=right-left;if(overlap<=5){ // fail
+reset();return;} // trim and add
+current.x=left;current.w=overlap;tower.push({...current});height++;hEl.textContent=height; // new block
+current={x: (Math.random()<.5?0:c.width-current.w), y: prev.y-20, w: current.w, h:20, dir: (Math.random()<.5?1:-1)} }
+function reset(){tower=[base];current={x:0,y:base.y-20,w:base.w,h:20,dir:1};height=0;hEl.textContent=0}
+function move(){current.x+=3*current.dir;if(current.x<=0||current.x+current.w>=c.width) current.dir*=-1}
+function draw(){x.clearRect(0,0,c.width,c.height);x.fillStyle='#0b1a4a';x.fillRect(0,c.height-10,c.width,10);x.fillStyle='#7aa2ff';tower.forEach(b=>x.fillRect(b.x,b.y,b.w,b.h));x.fillStyle='#eaeaea';x.fillRect(current.x,current.y,current.w,current.h)}
+function loop(){move();draw();requestAnimationFrame(loop)}
+addEventListener('keydown',e=>{if(!sections.stack.classList.contains('active')) return;if(e.code==='Space'){e.preventDefault();drop()}});c.addEventListener('mousedown',()=>sections.stack.classList.contains('active')&&drop());loop()}
+
+/* ===================== 5) KNIFE THROWER ===================== */
+let knifeInitd=false;function initKnives(){if(knifeInitd) return;knifeInitd=true;const c=document.getElementById('knifeCanvas');const x=c.getContext('2d');const hitsEl=document.getElementById('knifeHits');
+let angle=0,knives=[],speed=0.03,hits=0;function throwKnife(){ // check collision with existing
+const kAngle=angle;for(const a of knives){const d=Math.abs(a-kAngle);if(d<0.2||Math.abs(d-2*Math.PI)<0.2){ // hit another knife
+hits=0;knives=[];speed=0.03;return}}
+knives.push(kAngle);hits++;hitsEl.textContent=hits;if(knives.length%6===0) speed+=0.01}
+addEventListener('keydown',e=>{if(!sections.knives.classList.contains('active')) return;if(e.code==='Space'){e.preventDefault();throwKnife()}});c.addEventListener('mousedown',()=>sections.knives.classList.contains('active')&&throwKnife());
+(function loop(){x.clearRect(0,0,c.width,c.height);const cx=c.width/2,cy=c.height/2;const r=140;angle=(angle+speed)%(Math.PI*2); // target
+x.beginPath();x.arc(cx,cy,r,0,Math.PI*2);x.fillStyle='#0b1a4a';x.fill();x.strokeStyle='#7aa2ff';x.lineWidth=4;x.stroke(); // center
+x.fillStyle='#eaeaea';x.beginPath();x.arc(cx,cy,12,0,Math.PI*2);x.fill(); // knives
+x.strokeStyle='#e74c3c';x.lineWidth=3;knives.forEach(a=>{x.beginPath();x.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);x.lineTo(cx+Math.cos(a)*(r+18),cy+Math.sin(a)*(r+18));x.stroke()}); // rotating marker
+x.strokeStyle='#f1c40f';x.beginPath();x.moveTo(cx+Math.cos(angle)*(r-10),cy+Math.sin(angle)*(r-10));x.lineTo(cx+Math.cos(angle)*(r+10),cy+Math.sin(angle)*(r+10));x.stroke();requestAnimationFrame(loop)})()}
+
+/* ===================== 6) RUNAWAY BUTTON ===================== */
+let runInitd=false;function initRunaway(){if(runInitd) return;runInitd=true;const btn=document.getElementById('escapeBtn');const cont=btn.parentElement;const clicksEl=document.getElementById('runClicks');let clicks=0;function moveAway(e){const r=cont.getBoundingClientRect();let x=e.clientX-r.left,y=e.clientY-r.top;let nx=Math.random()* (r.width-80), ny=Math.random()*(r.height-40); // random hop
+btn.style.left=Math.max(0,Math.min(r.width-100,nx))+"px";btn.style.top=Math.max(0,Math.min(r.height-40,ny))+"px"}
+cont.addEventListener('mousemove',moveAway);btn.addEventListener('click',e=>{e.stopPropagation();clicks++;clicksEl.textContent=clicks;if(clicks>=5){btn.textContent='Gewonnen!';cont.removeEventListener('mousemove',moveAway)}})}
+
+/* ===================== 7) BALLOON ===================== */
+let balInitd=false;function initBalloon(){if(balInitd) return;balInitd=true;const c=document.getElementById('balloonCanvas');const x=c.getContext('2d');const scoreEl=document.getElementById('balloonScore');let r=20,hold=false,score=0,threshold=60;function draw(){x.clearRect(0,0,c.width,c.height);x.fillStyle='#e74c3c';x.beginPath();x.arc(c.width/2,c.height/2,r,0,Math.PI*2);x.fill();x.fillStyle='#fff';x.fillText('Grenze: '+threshold,10,20)}
+function pop(){ // lose
+r=20;threshold=50+Math.random()*60}
+function bank(){score+=Math.floor(r);scoreEl.textContent=score;r=20;threshold=50+Math.random()*60}
+addEventListener('keydown',e=>{if(!sections.balloon.classList.contains('active')) return;if(e.code==='Space'){e.preventDefault();hold=true}});addEventListener('keyup',e=>{if(e.code==='Space') hold=false});c.addEventListener('mousedown',()=>hold=true);c.addEventListener('mouseup',()=>{if(hold) bank();hold=false});
+(function loop(){if(hold){r+=1.4;if(r>threshold){pop();hold=false}}draw();requestAnimationFrame(loop)})()}
+
+/* ===================== 8) CLICKER ===================== */
+let clickInitd=false;function initClicker(){if(clickInitd) return;clickInitd=true;const btn=document.getElementById('clickBtn');const cEl=document.getElementById('clicks');const lvlEl=document.getElementById('clickerLvl');let n=0;btn.addEventListener('click',()=>{n++;cEl.textContent=n;btn.textContent=n>200?'🥔🚀 Mega Potato!':n>100?'🥔🔥 Super Potato':'🥔 Click!';lvlEl.textContent=n>200?'Weltherrschaft':n>100?'Super':'Kartoffel'})}
+
+/* ===================== 9) SIMON ===================== */
+let simonInitd=false;function initSimon(){if(simonInitd) return;simonInitd=true;const pads=[...document.querySelectorAll('#simon .pad')];const start=document.getElementById('simonStart');const roundEl=document.getElementById('simonRound');let seq=[],input=[],round=0,playing=false;function flash(i){pads[i].classList.add('active');setTimeout(()=>pads[i].classList.remove('active'),300)}
+function playSeq(){playing=true;let i=0;const iv=setInterval(()=>{flash(seq[i]);i++;if(i>=seq.length){clearInterval(iv);playing=false}},450)}
+function next(){round++;roundEl.textContent=round;seq.push(Math.floor(Math.random()*4));playSeq();input=[]}
+start.addEventListener('click',()=>{seq=[];round=0;next()});pads.forEach((p,i)=>p.addEventListener('click',()=>{if(playing) return;flash(i);input.push(i);for(let j=0;j<input.length;j++){if(input[j]!==seq[j]){roundEl.textContent='Fehler!';setTimeout(()=>{seq=[];round=0;next()},700);return}}if(input.length===seq.length) setTimeout(next,500)}))}
+
+/* ===================== 10) Mini 2048 ===================== */
+let mInitd=false;function initMini(){if(mInitd) return;mInitd=true;const grid=document.getElementById('grid2048');const scoreEl=document.getElementById('mScore');let score=0;let cells=[];function draw(){grid.innerHTML='';cells.forEach(v=>{const d=document.createElement('div');d.className='tile';d.textContent=v||'';d.style.background=v?`rgba(122,162,255,${Math.min(0.1+Math.log2(v)/6,0.95)})`:'#0b1a4a';grid.appendChild(d)})}
+function idx(r,c){return r*4+c}
+function spawn(){let free=[];cells.forEach((v,i)=>{if(!v) free.push(i)});if(!free.length) return;const i=free[Math.floor(Math.random()*free.length)];cells[i]=Math.random()<.9?2:4}
+function reset(){cells=new Array(16).fill(0);score=0;scoreEl.textContent=0;spawn();spawn();draw()}
+function move(dir){let moved=false;const lines=[];for(let r=0;r<4;r++){lines.push([idx(r,0),idx(r,1),idx(r,2),idx(r,3)])}
+for(let c=0;c<4;c++){lines.push([idx(0,c),idx(1,c),idx(2,c),idx(3,c)])}
+const use = (dir==='left')?lines.slice(0,4): (dir==='right')?lines.slice(0,4).map(a=>a.reverse()): (dir==='up')?lines.slice(4):lines.slice(4).map(a=>a.reverse());
+use.forEach(a=>{let arr=a.map(i=>cells[i]).filter(v=>v);for(let i=0;i<arr.length-1;i++){if(arr[i]===arr[i+1]){arr[i]*=2;score+=arr[i];arr.splice(i+1,1)}}while(arr.length<4) arr.push(0);a.forEach((i,k)=>{if(cells[i]!==arr[k]){moved=true;cells[i]=arr[k]}})});if(moved){spawn();draw();scoreEl.textContent=score}}
+addEventListener('keydown',e=>{if(!sections.mini2048.classList.contains('active')) return;const k=e.key; if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(k)) e.preventDefault(); if(k==='ArrowLeft') move('left'); if(k==='ArrowRight') move('right'); if(k==='ArrowUp') move('up'); if(k==='ArrowDown') move('down')});
+document.getElementById('mReset').addEventListener('click',reset);reset()}
+
+// Map initializers when game first opened
+const initMap={jumper:initJumper,stopper:initStopper,dodge:initDodge,stack:initStack,knives:initKnives,runaway:initRunaway,balloon:initBalloon,clicker:initClicker,simon:initSimon,mini2048:initMini};
+// auto-init first visible
+initJumper();
+</script>
+</body>
+</html>
