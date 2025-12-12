@@ -1,14 +1,17 @@
 // src/utils/highscore.js
-import { db } from "../firebaseConfig"
+import { db } from "../firebase"
 import { ref, get, set } from "firebase/database"
 
-const userId = "exampleUser" // temporary placeholder
+// gameId = e.g. "memory", "snake", etc.
 
-export async function getHighscore(gameId) {
+export async function getHighscore(userId, gameId) {
+    if (!userId) return 0
+
     try {
         const snapshot = await get(ref(db, `scores/${userId}/${gameId}`))
         if (snapshot.exists()) {
-            return snapshot.val().highscore || 0
+            const data = snapshot.val()
+            return data.highscore || 0
         } else {
             return 0
         }
@@ -18,7 +21,9 @@ export async function getHighscore(gameId) {
     }
 }
 
-export async function saveHighscore(gameId, score) {
+export async function saveHighscore(userId, gameId, score) {
+    if (!userId) return
+
     try {
         await set(ref(db, `scores/${userId}/${gameId}`), {
             highscore: score,
