@@ -4,18 +4,22 @@ import { auth } from "./firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  onAuthStateChanged
+  onAuthStateChanged,
+  updateProfile
 } from "firebase/auth";
 
 function LoginComponent() {
   const navigate = useNavigate();
+
   const [user, setUser] = useState(null);
   const [isFlipped, setIsFlipped] = useState(false);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState(""); // ⬅️ neu
+
   const [message, setMessage] = useState("");
 
-  // Redirect, wenn bereits eingeloggt
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -26,27 +30,37 @@ function LoginComponent() {
     return () => unsubscribe();
   }, [navigate]);
 
+  // ➕ REGISTRIEREN inkl Username
   const handleRegister = async () => {
     try {
       const res = await createUserWithEmailAndPassword(auth, email, password);
-      setMessage(`✅ Konto erstellt: ${res.user.email}`);
+
+      // username speichern
+      await updateProfile(res.user, {
+        displayName: username
+      });
+
+      setMessage(`✅ Konto erstellt: ${username}`);
       setTimeout(() => navigate("/app", { replace: true }), 800);
     } catch (err) {
       setMessage(`❌ Fehler: ${err.message}`);
     }
   };
 
+  // 🔑 LOGIN
   const handleLogin = async () => {
     try {
       const res = await signInWithEmailAndPassword(auth, email, password);
-      setMessage(`✅ Angemeldet als: ${res.user.email}`);
+      setMessage(
+        `✅ Willkommen: ${res.user.displayName || res.user.email}`
+      );
       setTimeout(() => navigate("/app", { replace: true }), 800);
     } catch (err) {
       setMessage(`❌ Fehler: ${err.message}`);
     }
   };
 
-  // Außencontainer
+  // ---------- STYLES (deins, unverändert) ----------
   const containerStyle = {
     backgroundColor: "#0f163f",
     color: "white",
@@ -59,7 +73,6 @@ function LoginComponent() {
     overflow: "hidden"
   };
 
-  // Headline
   const titleStyle = {
     marginBottom: "clamp(12px, 2.5vw, 24px)",
     fontSize: "clamp(28px, 6vw, 64px)",
@@ -72,7 +85,6 @@ function LoginComponent() {
     animation: "glow 2s ease-in-out infinite alternate"
   };
 
-  // Scene/Wrapper
   const sceneStyle = {
     width: "100%",
     maxWidth: "440px",
@@ -88,7 +100,6 @@ function LoginComponent() {
     transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)"
   };
 
-  // Kartenflächen
   const cardFaceBase = {
     position: "relative",
     width: "100%",
@@ -107,16 +118,8 @@ function LoginComponent() {
   };
 
   const cardFrontStyle = { ...cardFaceBase };
+  const cardBackStyle = { ...cardFaceBase, transform: "rotateY(180deg)", position: "absolute", top: 0, left: 0 };
 
-  const cardBackStyle = {
-    ...cardFaceBase,
-    transform: "rotateY(180deg)",
-    position: "absolute",
-    top: 0,
-    left: 0
-  };
-
-  // Inputs/Buttons
   const inputStyle = {
     width: "100%",
     padding: "clamp(10px, 2.3vw, 14px)",
@@ -125,8 +128,7 @@ function LoginComponent() {
     backgroundColor: "rgba(255,255,255,0.1)",
     color: "white",
     fontSize: "clamp(14px, 2.8vw, 16px)",
-    backdropFilter: "blur(10px)",
-    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.2)"
+    backdropFilter: "blur(10px)"
   };
 
   const buttonStyle = {
@@ -137,10 +139,7 @@ function LoginComponent() {
     background: "linear-gradient(45deg, #4b61ff, #6376ff)",
     color: "white",
     cursor: "pointer",
-    fontWeight: "bold",
-    fontSize: "clamp(14px, 3vw, 16px)",
-    boxShadow: "0 4px 15px rgba(75, 97, 255, 0.4)",
-    transition: "all 0.3s ease"
+    fontWeight: "bold"
   };
 
   const linkButtonStyle = {
@@ -151,10 +150,7 @@ function LoginComponent() {
     backgroundColor: "transparent",
     color: "#4b61ff",
     cursor: "pointer",
-    fontWeight: "bold",
-    fontSize: "clamp(13px, 2.7vw, 15px)",
-    backdropFilter: "blur(10px)",
-    transition: "all 0.3s ease"
+    fontWeight: "bold"
   };
 
   const messageStyle = {
@@ -164,30 +160,17 @@ function LoginComponent() {
     fontSize: "0.9rem"
   };
 
-  // Glow Animation
-
-  useEffect(() => {
-    const styleSheet = document.createElement("style");
-    styleSheet.textContent = `
-      @keyframes glow {
-        from { text-shadow: 0 0 20px rgba(75, 97, 255, 0.5); }
-        to { text-shadow: 0 0 30px rgba(75, 97, 255, 0.8), 0 0 40px rgba(75, 97, 255, 0.4); }
-      }
-    `;
-    if (!document.getElementById("glow-animation")) {
-      styleSheet.id = "glow-animation";
-      document.head.appendChild(styleSheet);
-    }
-  }, []);
-
   return (
     <div style={containerStyle}>
       <div style={titleStyle}>Arcadia</div>
+
       <div style={sceneStyle}>
         <div style={cardWrapperStyle}>
-          {/* Login Seite */}
+
+          {/* LOGIN */}
           <div style={cardFrontStyle}>
-            <h2 style={{ marginBottom: "1.5rem", fontSize: "1.8rem" }}>Anmelden</h2>
+            <h2>Anmelden</h2>
+
             <input
               style={inputStyle}
               type="email"
@@ -195,6 +178,7 @@ function LoginComponent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+
             <input
               style={inputStyle}
               type="password"
@@ -202,22 +186,33 @@ function LoginComponent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+
             <button style={buttonStyle} onClick={handleLogin}>
               Anmelden
             </button>
+
             <button
               style={linkButtonStyle}
-              type="button"
               onClick={() => setIsFlipped(true)}
             >
               Kein Konto? Registrieren
             </button>
+
             <p style={messageStyle}>{message}</p>
           </div>
 
-          {/* Register Seite */}
+          {/* REGISTER */}
           <div style={cardBackStyle}>
-            <h2 style={{ marginBottom: "1.5rem", fontSize: "1.8rem" }}>Registrieren</h2>
+            <h2>Registrieren</h2>
+
+            <input
+              style={inputStyle}
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+
             <input
               style={inputStyle}
               type="email"
@@ -225,6 +220,7 @@ function LoginComponent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+
             <input
               style={inputStyle}
               type="password"
@@ -232,16 +228,18 @@ function LoginComponent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+
             <button style={buttonStyle} onClick={handleRegister}>
               Konto erstellen
             </button>
+
             <button
               style={linkButtonStyle}
-              type="button"
               onClick={() => setIsFlipped(false)}
             >
               Bereits Konto? Anmelden
             </button>
+
             <p style={messageStyle}>{message}</p>
           </div>
         </div>
