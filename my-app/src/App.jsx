@@ -35,12 +35,15 @@ const items = [
 export default function App() {
   const [active, setActive] = useState("home");
   const [user, setUser] = useState(null);
+  const [query, setQuery] = useState("");
+  const [headerGlow, setHeaderGlow] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const Comp = items.find((i) => i.id === active)?.Comp ?? null;
   const year = new Date().getFullYear();
   const navigate = useNavigate();
 
-  // 🔍 Auth Listener
+  // 🔐 Auth Listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -55,61 +58,132 @@ export default function App() {
     setActive("home");
   };
 
+  // 🔍 Suche
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredItems = normalizedQuery
+    ? items.filter((item) => {
+        const title = item.title.toLowerCase();
+        const id = item.id.toLowerCase();
+        return title.includes(normalizedQuery) || id.includes(normalizedQuery);
+      })
+    : items;
+
   return (
-    <>
-      <header>
+    <div className="app-wrapper">
+      {/* ✨ Gamified Header */}
+      <header className={`header ${headerGlow ? "header--glow" : ""}`}>
         <div className="header-inner">
-          <form className="search">
-            <input placeholder="Search" aria-label="Search" />
+          <button
+            className="menu-toggle"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Menu"
+          >
+            <span className="hamburger" />
+          </button>
+
+          <form
+            className="search-container"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (filteredItems.length > 0) {
+                setActive(filteredItems[0].id);
+              }
+            }}
+          >
+            <div className="search-glass">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                className="search-input"
+                placeholder="Finde dein nächstes Game..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setHeaderGlow(true)}
+                onBlur={() => setHeaderGlow(false)}
+              />
+            </div>
           </form>
 
           <h1
             className="brand"
-            onClick={() => setActive("home")}
-            style={{ cursor: "pointer" }}
+            onClick={() => {
+              setActive("home");
+              setQuery("");
+            }}
           >
-            Arcadia
+            <span className="brand-glow">Arcadia</span>
           </h1>
 
-          <div className="account">
-            <span>Coins: <strong>0</strong></span>
+          <div className="header-actions">
+            <div className="coins-display">
+              <span className="coins-icon">🪙</span>
+              <span className="coins-amount">1,247</span>
+              <div className="coins-glow" />
+            </div>
 
-            {user && (
-              <>
-                <span style={{ margin: "0 12px" }}>
-                  👤 {user.displayName || user.email}
-                </span>
-
-                <button className="btn" onClick={handleLogout}>
-                  Logout
+            {user ? (
+              <div className="user-menu">
+                <div className="user-avatar">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt="Avatar" />
+                  ) : (
+                    <span>{user.email?.[0]?.toUpperCase()}</span>
+                  )}
+                </div>
+                <button className="logout-btn" onClick={handleLogout}>
+                  <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m4-4v4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4v-4m0 4H5" />
+                  </svg>
                 </button>
-              </>
+              </div>
+            ) : (
+              <span className="login-hint">Login für Leaderboards</span>
             )}
           </div>
         </div>
       </header>
 
-      <main>
+      <main className={`main ${sidebarOpen ? "main--sidebar-open" : ""}`}>
+        {/* Sidebar */}
         <aside className="sidebar left">
-          <Ads onOpen={setActive} />
+          <div className="sidebar-inner">
+            <Ads onOpen={setActive} />
+          </div>
         </aside>
 
-        <section id="stage">
-          <Suspense fallback={<div style={{ padding: 20 }}>Lade…</div>}>
+        {/* Game Area */}
+        <section id="stage" className="stage">
+          <Suspense fallback={<div className="loading">Lade Game…</div>}>
             {active === "home" ? (
-              <Home items={items} onOpen={setActive} />
+              <Home items={filteredItems} onOpen={setActive} />
             ) : (
-              <Comp />
+              Comp && <Comp />
             )}
           </Suspense>
         </section>
 
+        {/* Leaderboard */}
         <aside className="sidebar right">
-          <Leaderboard />
+          <div className="sidebar-inner">
+            <Leaderboard />
+          </div>
         </aside>
       </main>
 
-      <footer>© {year} Arcadia</footer>
-    </>
+      <footer className="footer">
+        <div className="footer-inner">
+          © {year} Arcadia – <span className="footer-link">Datenschutz</span> |{" "}
+          <span className="footer-link">Impressum</span>
+        </div>
+      </footer>
+    </div>
   );
 }
