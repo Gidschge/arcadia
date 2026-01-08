@@ -1,20 +1,18 @@
+import "./index.css";   // <- GLOBAL (Layout, Farben, Grid)
+import "./styles.css"; // <- Arcadia Design (Panels, Cards, etc.)
+
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./login";  // dein Login-Component
-import Home from "./Home.jsx";      // deine Haupt-App
-import './styles.css'
-import App from "./App.jsx";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<Login />} />           {/* Start = Login */}
-      <Route path="/app" element={<App />} />           {/* Haupt-App */}
-      <Route path="/home" element={<Home />} />           {/* Haupt-App */}
-      <Route path="*" element={<Navigate to="/" />} />  {/* Fallback */}
-    </Routes>
-  </BrowserRouter>
+const root = document.getElementById("root");
+if (!root) throw new Error('Root element "#root" not found');
+
+ReactDOM.createRoot(root).render(
+    <React.StrictMode>
+        <BrowserRouter>
+            <App />
+        </BrowserRouter>
+    </React.StrictMode>
 );
-
-
