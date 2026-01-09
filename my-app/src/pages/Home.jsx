@@ -1,27 +1,50 @@
 import React from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GAMES } from "../games/registry";
+import { getThumbnail } from "../games/thumbnails"; // 🔥 Wichtig: Pfad prüfen!
 
-// 🔥 Die fehlende Komponente definieren oder importieren
+/**
+ * GameCard Komponente
+ * Nutzt die getThumbnail Funktion für das visuelle Cover
+ */
 function GameCard({ game }) {
+  // Generiert das SVG-Cover basierend auf der Game-ID aus deiner thumbnail.js
+  const thumb = getThumbnail(game.id);
+
   return (
     <Link to={`/app/play/${game.id}`} className="homeCard">
-      <div className="homeCardIcon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>
-        {game.emoji || "🎮"}
+      {/* Thumbnail Bereich */}
+      <div className="homeCardThumbnail">
+        <img 
+          src={thumb} 
+          alt={game.name} 
+          loading="lazy"
+        />
+        {/* Optionaler Overlay-Effekt */}
+        <div className="cardOverlay"></div>
       </div>
-      <div className="homeCardName">{game.name}</div>
-      <div className="homeCardMeta">
-        {game.description || "Klicke zum Starten"}
+      
+      {/* Info Bereich */}
+      <div className="homeCardInfo">
+        <div className="homeCardName">
+          {game.emoji} {game.name}
+        </div>
+        <div className="homeCardMeta">
+          {game.description || "Highscore jagen!"}
+        </div>
       </div>
     </Link>
   );
 }
 
+/**
+ * Hauptkomponente der Startseite
+ */
 export default function Home() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q")?.toLowerCase() || "";
 
-  // Spiele basierend auf der Suche aus dem Layout filtern
+  // Filter-Logik: Reagiert auf die Suche aus der Topbar (Layout.jsx)
   const filteredGames = GAMES.filter(game => 
     game.name.toLowerCase().includes(query) || 
     game.id.toLowerCase().includes(query)
@@ -29,12 +52,11 @@ export default function Home() {
 
   return (
     <div className="homeWrap">
-      <div className="homeHeader">
+      <header className="homeHeader">
         <h2 className="homeTitle">
-          {query ? `Ergebnisse für "${query}"` : "Entdecke Arcadia"}
+          {query ? `Suche: "${query}"` : "Entdecke Arcadia"}
         </h2>
-  
-      </div>
+           </header>
       
       <div className="homeGrid">
         {filteredGames.length > 0 ? (
@@ -42,9 +64,10 @@ export default function Home() {
             <GameCard key={game.id} game={game} />
           ))
         ) : (
-          <div className="homeCardMeta" style={{ gridColumn: "1/-1", padding: "60px", textAlign: "center", border: "1px dashed var(--stroke)", borderRadius: "18px" }}>
-            <div style={{ fontSize: "24px", marginBottom: "10px" }}>🔍</div>
-            Kein Spiel gefunden, das zu <strong>"{query}"</strong> passt.
+          <div className="noResults">
+            <div style={{ fontSize: "40px", marginBottom: "15px" }}>🕵️‍♂️</div>
+            <h3>Keine Treffer für "{query}"</h3>
+            <p className="homeCardMeta">Probiere es mit einem anderen Suchbegriff.</p>
           </div>
         )}
       </div>

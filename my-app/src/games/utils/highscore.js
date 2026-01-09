@@ -1,6 +1,6 @@
 // games/utils/highscore.js
 import { db, serverTimestamp, auth } from "../../firebase";
-import { doc, getDoc, setDoc, collection } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 export async function saveHighscore(gameId, score) {
   const user = auth.currentUser;
@@ -10,11 +10,21 @@ export async function saveHighscore(gameId, score) {
   }
 
   try {
-    // A) Privater Score (deine bisherige Logik)
+    // 1. Zuerst den aktuellen Bestwert abrufen
     const userGameRef = doc(db, "userScores", user.uid, "games", gameId);
+    const snap = await getDoc(userGameRef);
 
-    // B) Globaler Leaderboard Score (NEU für das Leaderboard-Widget)
-    // Pfad: leaderboards / {gameId} / ranking / {userId}
+    const oldScore = snap.exists() ? snap.data().score : 0;
+
+    // 2. 🔥 Vergleich: Nur speichern, wenn der neue Score höher ist
+    if (score <= oldScore) {
+      console.log(
+        `ℹ️ Kein neuer Rekord (${score} <= ${oldScore}). Nicht gespeichert.`
+      );
+      return false;
+    }
+
+    // 3. Wenn höher, dann beide Pfade aktualisieren
     const globalRef = doc(db, "leaderboards", gameId, "ranking", user.uid);
 
     const scoreData = {
@@ -25,13 +35,12 @@ export async function saveHighscore(gameId, score) {
       updated: serverTimestamp(),
     };
 
-    // Parallel speichern
     await Promise.all([
       setDoc(userGameRef, scoreData, { merge: true }),
       setDoc(globalRef, scoreData, { merge: true }),
     ]);
 
-    console.log(`✅ SAVED ${score} for ${gameId} (Private & Global)`);
+    console.log(`✅ NEUER HIGHSCORE: ${score} (vorher ${oldScore})`);
     return true;
   } catch (error) {
     console.error("Save Error:", error);
@@ -39,7 +48,6 @@ export async function saveHighscore(gameId, score) {
   }
 }
 
-// Deine getHighscore bleibt für den persönlichen Bestwert gleich
 export async function getHighscore(gameId) {
   const user = auth.currentUser;
   if (!user) return 0;
