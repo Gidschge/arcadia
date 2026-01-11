@@ -1,3 +1,6 @@
+/* =========================================================
+   Design Tokens
+========================================================= */
 :root {
   --bg1: #050A2A;
   --bg2: #0A1B55;
@@ -9,6 +12,10 @@
   --radius: 18px;
 }
 
+
+/* =========================================================
+   Base
+========================================================= */
 html,
 body,
 #root {
@@ -22,7 +29,10 @@ body {
   color: var(--text);
 }
 
-/* Topbar */
+
+/* =========================================================
+   Topbar
+========================================================= */
 .arcadiaTopbar {
   display: flex;
   align-items: center;
@@ -30,22 +40,10 @@ body {
   padding: 18px 24px;
 }
 
-.arcadiaSearch {
-  flex: 1;
-  max-width: 520px;
-  height: 36px;
-  border-radius: 999px;
-  border: 1px solid var(--stroke);
-  background: rgba(0, 0, 0, 0.22);
-  color: var(--text);
-  padding: 0 14px;
-  outline: none;
-}
-
 .arcadiaTitle {
   font-weight: 800;
   font-size: 44px;
-  letter-spacing: 0.5px;
+  letter-spacing: .5px;
 }
 
 .arcadiaTopRight {
@@ -55,27 +53,41 @@ body {
   gap: 12px;
 }
 
+.arcadiaSearch {
+  flex: 1;
+  max-width: 520px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text);
+  outline: none;
+}
+
 .arcadiaCoins {
   color: var(--muted);
 }
 
 .arcadiaLogin {
-  border: 0;
   padding: 8px 14px;
+  border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
   color: var(--text);
   cursor: pointer;
 }
 
-/* 3-column layout */
+
+/* =========================================================
+   3-column layout
+========================================================= */
 .arcadiaGrid {
   display: grid;
   grid-template-columns: 320px 1fr 320px;
   gap: 18px;
-  padding: 0 24px 24px;
+  padding: 20px 24px 24px;
   align-items: start;
-  padding-top: 20px;
 }
 
 .arcadiaLeft,
@@ -88,7 +100,10 @@ body {
   backdrop-filter: blur(10px);
 }
 
-/* Center panel content */
+
+/* =========================================================
+   Game grid + cards
+========================================================= */
 .panelTitle {
   color: var(--muted);
   font-weight: 600;
@@ -108,11 +123,12 @@ body {
   justify-content: center;
   gap: 10px;
   padding: 18px 12px;
+  text-decoration: none;
+  color: var(--text);
+  
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 16px;
-  text-decoration: none;
-  color: var(--text);
 }
 
 .gameCard:hover {
@@ -130,11 +146,14 @@ body {
   font-weight: 700;
 }
 
-/* PlayGame stage */
+
+/* =========================================================
+   Game stage
+========================================================= */
 .gameStage {
   height: 560px;
-  border-radius: 16px;
   overflow: hidden;
+  border-radius: 16px;
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.10);
 }
@@ -146,13 +165,23 @@ body {
   margin-bottom: 12px;
 }
 
-.chip {
+.chip,
+.chipBtn {
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.10);
   color: var(--text);
   font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.chip {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.chipBtn {
+  background: rgba(255, 255, 255, 0.10);
+  border: 0;
+  cursor: pointer;
 }
 
 .chipRight {
@@ -161,80 +190,196 @@ body {
   gap: 10px;
 }
 
-.chipBtn {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.10);
-  color: var(--text);
-  border: 0;
-  cursor: pointer;
-}
 
-.homeWrap {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
+/* =========================================================
+   Kompakter Premium Header
+========================================================= */
 .homeHeader {
-  padding: 6px 6px 2px;
+  position: relative;
+  padding: 32px 36px;
+  margin-bottom: 8px;
+  border-radius: 20px;
+  
+  /* Glas-Effekt mit leichtem Gradient */
+  background: linear-gradient(135deg, var(--panel2), var(--panel));
+  border: 1px solid var(--stroke);
+  backdrop-filter: blur(10px);
+  
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+/* Subtiler Lichtschein in der Ecke */
+.homeHeader::after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(80, 220, 255, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.homeHeaderInner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .homeTitle {
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.86);
+  margin: 0;
+  font-weight: 800;
+  font-size: 28px; /* Kleiner & cleaner */
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
-.homeSub {
-  margin-top: 4px;
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 14px;
+.homeSubtitle {
+  margin: 4px 0 0;
+  font-size: 14px; /* Kompakter Text */
+  color: var(--muted);
+  font-weight: 500;
 }
 
+.homeHeaderIcon {
+  font-size: 32px;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));
+  user-select: none;
+}
+
+/* Mobile Optimierung */
+@media (max-width: 600px) {
+  .homeHeader {
+    padding: 20px;
+  }
+  .homeHeaderIcon {
+    display: none;
+  }
+}
+
+
+/* =========================================================
+   Cards Grid (auto responsive)
+========================================================= */
 .homeGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(170px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px;
 }
 
 .homeCard {
-  height: 170px;
-  border-radius: 18px;
-  padding: 16px;
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.92);
-  background: rgba(0, 0, 0, 0.18);
+  color: inherit;
+}
+
+
+/* =========================================================
+   Cover Cards
+========================================================= */
+.homeCover {
+  position: relative;
+  aspect-ratio: 16/9;
+  border-radius: 18px;
+  overflow: hidden;
+
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.homeCoverImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(1.12) contrast(1.08) brightness(1.02);
+  transition: transform .18s ease;
+}
+
+.homeCover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.10), transparent 55%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.homeCoverInfo {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  justify-content: center;
-  align-items: center;
-  transition: transform .15s ease, background .15s ease;
+  gap: 8px;
 }
 
-.homeCard:hover {
-  transform: translateY(-3px);
-  background: rgba(255, 255, 255, 0.09);
+.homeCoverName {
+  padding: 10px 12px;
+  border-radius: 14px;
+
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.95);
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.homeCardIcon {
-  width: 62px;
-  height: 62px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.14);
+.homeCoverMeta {
+  padding: 8px 10px;
+  border-radius: 12px;
+
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(8px);
+
+  font-size: 12.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: .18s ease;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.homeCardName {
-  font-weight: 800;
+.homeCard:hover .homeCover {
+  transform: translateY(-5px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.62);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
-.homeCardMeta {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 13px;
-  text-align: center;
+.homeCard:hover .homeCoverImg {
+  transform: scale(1.04);
 }
 
+.homeCard:hover .homeCoverMeta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+/* =========================================================
+   Game Over Overlay
+========================================================= */
 .stageWrap {
   position: relative;
 }
@@ -246,6 +391,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 18px;
+
   background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(8px);
   border-radius: 16px;
@@ -253,47 +399,48 @@ body {
 
 .gameOverCard {
   width: min(520px, 92%);
-  border-radius: 22px;
   padding: 18px 18px 14px;
+  border-radius: 22px;
+
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.40);
 }
 
 .gameOverTitle {
-  font-weight: 900;
-  font-size: 26px;
-  letter-spacing: .3px;
   margin-bottom: 10px;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: .3px;
 }
 
 .gameOverScore {
   display: flex;
-  align-items: baseline;
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
   border-radius: 16px;
+
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.bigScore {
+  font-size: 34px;
+  font-weight: 900;
 }
 
 .muted {
   opacity: .75;
 }
 
-.bigScore {
-  font-weight: 900;
-  font-size: 34px;
-}
-
 .gameOverReason {
   margin-top: 10px;
   padding: 10px 12px;
   border-radius: 14px;
+
   background: rgba(255, 90, 90, 0.12);
   border: 1px solid rgba(255, 90, 90, 0.22);
-  opacity: .92;
 }
 
 .gameOverActions {
@@ -305,9 +452,9 @@ body {
 .primaryBtn,
 .secondaryBtn {
   flex: 1;
-  border: 0;
-  border-radius: 999px;
   padding: 10px 14px;
+  border-radius: 999px;
+  border: 0;
   cursor: pointer;
   color: rgba(255, 255, 255, 0.92);
 }
@@ -326,103 +473,4 @@ body {
   margin-top: 10px;
   font-size: 12px;
   opacity: .65;
-}
-
-.arcadiaLeft .gameCard {
-  min-height: auto; /* Verhindert, dass sie so hoch wie auf der Startseite sind */
-  height: 70px;
-}
-
-.arcadiaLeft .gameIcon {
-  width: 44px; /* Etwas kleinere Icons für die Seitenleiste */
-  height: 44px;
-}
-
-/* Leaderboard Dropdown Styling */
-.leaderboardSelectWrapper select.arcadiaSearch {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  background-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.leaderboardSelectWrapper select.arcadiaSearch:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
-}
-
-.leaderboardSelectWrapper select.arcadiaSearch:focus {
-  border-color: #4ade80;
-  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.1);
-}
-
-/* Container für die Karten */
-.homeGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
-  padding-bottom: 40px;
-}
-
-/* Die neue GameCard mit Thumbnail */
-.homeCard {
-  background: var(--panel2);
-  border: 1px solid var(--stroke);
-  border-radius: 16px;
-  overflow: hidden;
-  text-decoration: none;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-}
-
-.homeCard:hover {
-  transform: translateY(-6px);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-}
-
-.homeCardThumbnail {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: #07122d;
-  overflow: hidden;
-}
-
-.homeCardThumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.homeCard:hover .homeCardThumbnail img {
-  transform: scale(1.08);
-}
-
-.homeCardInfo {
-  padding: 15px;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.02), transparent);
-}
-
-.homeCardName {
-  color: var(--text);
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-bottom: 5px;
-}
-
-/* Leere Suche / Kein Ergebnis */
-.noResults {
-  grid-column: 1 / -1;
-  padding: 80px 20px;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 2px dashed var(--stroke);
-  border-radius: 20px;
-  color: var(--muted);
 }

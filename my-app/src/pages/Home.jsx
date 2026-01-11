@@ -1,36 +1,32 @@
 import React from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GAMES } from "../games/registry";
-import { getThumbnail } from "../games/thumbnails"; // 🔥 Wichtig: Pfad prüfen!
+import { getThumbnail } from "../games/thumbnails";
 
 /**
  * GameCard Komponente
- * Nutzt die getThumbnail Funktion für das visuelle Cover
  */
 function GameCard({ game }) {
-  // Generiert das SVG-Cover basierend auf der Game-ID aus deiner thumbnail.js
   const thumb = getThumbnail(game.id);
 
   return (
     <Link to={`/app/play/${game.id}`} className="homeCard">
-      {/* Thumbnail Bereich */}
-      <div className="homeCardThumbnail">
-        <img 
-          src={thumb} 
-          alt={game.name} 
+      <div className="homeCover">
+        <img
+          src={thumb}
+          alt={game.name}
+          className="homeCoverImg"
+          draggable={false}
           loading="lazy"
         />
-        {/* Optionaler Overlay-Effekt */}
-        <div className="cardOverlay"></div>
-      </div>
-      
-      {/* Info Bereich */}
-      <div className="homeCardInfo">
-        <div className="homeCardName">
-          {game.emoji} {game.name}
-        </div>
-        <div className="homeCardMeta">
-          {game.description || "Highscore jagen!"}
+
+        <div className="homeCoverInfo">
+          <div className="homeCoverName">
+            {game.emoji} {game.name}
+          </div>
+          <div className="homeCoverMeta">
+            {game.description || "Highscore jagen!"}
+          </div>
         </div>
       </div>
     </Link>
@@ -44,30 +40,42 @@ export default function Home() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q")?.toLowerCase() || "";
 
-  // Filter-Logik: Reagiert auf die Suche aus der Topbar (Layout.jsx)
-  const filteredGames = GAMES.filter(game => 
-    game.name.toLowerCase().includes(query) || 
-    game.id.toLowerCase().includes(query)
+  const filteredGames = GAMES.filter(
+    (game) =>
+      game.name.toLowerCase().includes(query) ||
+      game.id.toLowerCase().includes(query)
   );
 
   return (
     <div className="homeWrap">
-      <header className="homeHeader">
-        <h2 className="homeTitle">
-          {query ? `Suche: "${query}"` : "Entdecke Arcadia"}
-        </h2>
-           </header>
-      
+<header className="homeHeader">
+  <div className="homeHeaderInner">
+    <div className="homeHeaderText">
+      <h1 className="homeTitle">
+        {query ? `Suche: ${query}` : "Entdecke Arcadia"}
+      </h1>
+      {!query && (
+        <p className="homeSubtitle">Finde dein nächstes Lieblingsspiel</p>
+      )}
+    </div>
+    <div className="homeHeaderIcon">✨</div>
+  </div>
+</header>
+
+
+
       <div className="homeGrid">
         {filteredGames.length > 0 ? (
-          filteredGames.map(game => (
+          filteredGames.map((game) => (
             <GameCard key={game.id} game={game} />
           ))
         ) : (
           <div className="noResults">
             <div style={{ fontSize: "40px", marginBottom: "15px" }}>🕵️‍♂️</div>
             <h3>Keine Treffer für "{query}"</h3>
-            <p className="homeCardMeta">Probiere es mit einem anderen Suchbegriff.</p>
+            <p className="homeCardMeta">
+              Probiere es mit einem anderen Suchbegriff.
+            </p>
           </div>
         )}
       </div>
