@@ -1,7 +1,7 @@
-export const knifeThrower = {
-    id: "knives",
-    name: "Knife Thrower",
-    controls: "SPACE / Klick = Werfen",
+export const runner = {
+    id: "runner",
+    name: "Runaway Runner",
+    controls: "A/D oder ←/→ = Lane wehchseln",
 
     create(ctx) {
         const canvas = document.createElement("canvas");
@@ -23,38 +23,36 @@ export const knifeThrower = {
         let started = false;
         let lastTime = 0;
 
-        // Target
-        const cx = Math.floor(W * 0.5);
-        const cy = Math.floor(H * 0.36);
-        const baseR = Math.min(W, H) * 0.12;
-
-        // Gameplay
-        let score = 0;
-        let level = 1;
-        let knivesTotal = 6;   // knives needed this level
-        let hits = 0;          // successful hits this level
-        let knivesLeft = 6;    // throws remaining
-
-        // Rotation
-        let rot = 0;
-        let rotVel = 1.2;
-        let rotVelTarget = 1.2;
-
-        // Each stuck knife: angle in target-local coordinates
-        const stuck = [];
-
-        // Flying knife
-        const fly = {
-            active: false,
-            x: cx,
-            y: Math.floor(H * 0.86),
-            vy: -1250,
+        // Lanes
+        const lanes = 3;
+        const laneCenterX = (i) => {
+            const pad = W * 0.18;
+            const usable = W - pad * 2;
+            return pad + (usable * (i + 0.5)) / lanes;
         };
 
-        // Juice
-        let shake = 0;
-        let flashGood = 0;
-        let flashBad = 0;
+        const roadTop = H * 0.12;
+        const roadBot = H * 0.92;
+
+        // Player
+        const player = {
+            lane: 1,
+            laneTarget: 1,
+            x: laneCenterX(1),
+            y: H * 0.80,
+            w: 40,
+            h: 40,
+            dashT: 0,
+            dashCd: 0,
+            tilt: 0,
+        };
+
+        // Obstacles (move downward)
+        const obstacles = [];
+        let spawnT = 0.6;
+        let speed = 360;
+        let score = 0;
+        let timeAlive = 0;
 
         // Particles
         const particles = [];
@@ -65,7 +63,7 @@ export const knifeThrower = {
                     y,
                     vx: (Math.random() * 2 - 1) * power,
                     vy: (Math.random() * 2 - 1) * power,
-                    life: 0.35 + Math.random() * 0.6,
+                    life: 0.4 + Math.random() * 0.6,
                     t: 0,
                     r: 2 + Math.random() * 3,
                     good,
@@ -77,90 +75,91 @@ export const knifeThrower = {
             return Math.max(a, Math.min(b, v));
         }
 
-        function wrapAngle(a) {
-            while (a > Math.PI) a -= Math.PI * 2;
-            while (a < -Math.PI) a += Math.PI * 2;
-            return a;
-        }
-
-        function resetAll() {
+        function reset() {
             score = 0;
-            level = 1;
+            timeAlive = 0;
+            speed = 360;
+            spawnT = 0.75;
 
-            rot = 0;
-            rotVel = 1.2;
-            rotVelTarget = 1.2;
+            player.lane = 1;
+            player.laneTarget = 1;
+            player.x = laneCenterX(1);
+            player.dashT = 0;
+            player.dashCd = 0;
+            player.tilt = 0;
 
-            stuck.length = 0;
+            obstacles.length = 0;
             particles.length = 0;
 
-            fly.active = false;
-            fly.x = cx;
-            fly.y = Math.floor(H * 0.86);
-
-            shake = 0;
-            flashGood = 0;
-            flashBad = 0;
-
-            setupLevel(1);
             ctx.callbacks?.onScore?.(0);
         }
 
-        function setupLevel(lv) {
-            level = lv;
-
-            // difficulty scaling
-            knivesTotal = clamp(6 + Math.floor((lv - 1) * 0.9), 6, 12);
-            knivesLeft = knivesTotal;
-            hits = 0;
-
-            stuck.length = 0;
-            fly.active = false;
-
-            // rotation ramps
-            const base = 1.0 + lv * 0.12;
-            rotVel = (Math.random() < 0.5 ? -1 : 1) * base;
-            rotVelTarget = (Math.random() < 0.5 ? -1 : 1) * (base + 0.35 + Math.random() * 0.4);
-
-            flashGood = 0.18;
+        function laneLeft() {
+            player.laneTarget = clamp(player.laneTarget - 1, 0, lanes - 1);
+        }
+        function laneRight() {
+            player.laneTarget = clamp(player.laneTarget + 1, 0, lanes - 1);
         }
 
-        function gameOver(reason) {
-            running = false;
-            ctx.callbacks?.onGameOver?.({ score, reason });
-        }
-
-        function attemptThrow() {
-            if (!running) return;
-
-            if (!started) {
-                started = true;
-                return;
-            }
-
-            if (fly.active) return;
-            if (knivesLeft <= 0) return;
-
-            knivesLeft -= 1;
-
-            fly.active = true;
-            fly.x = cx;
-            fly.y = Math.floor(H * 0.86);
-
-            spawnParticles(cx, fly.y, 10, 320, true);
+        function dash() {
+            if (!running || !started) return;
+            if (player.dashCd > 0) return;
+            player.dashT = 0.16;
+            player.dashCd = 0.65;
+            spawnParticles(player.x, player.y, 16, 520, true);
         }
 
         function onKeyDown(e) {
-            if (e.code === "Space") {
+            if (e.code === "ArrowLeft" || e.code === "KeyA") {
                 e.preventDefault();
-                attemptThrow();
+                if (!started) { started = true; return; }
+                laneLeft();
+            }
+            if (e.code === "ArrowRight" || e.code === "KeyD") {
+                e.preventDefault();
+                if (!started) { started = true; return; }
+                laneRight();
+            }
+            if (e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "Space") {
+                e.preventDefault();
+                if (!started) { started = true; return; }
+                dash();
             }
         }
-        function onPointerDown() {
-            attemptThrow();
+
+        function onPointerDown(ev) {
+            if (!started) { started = true; return; }
+            // click left/right half -> lane move, middle -> dash
+            const x = ev.offsetX ?? (ev.clientX - canvas.getBoundingClientRect().left);
+            if (x < W * 0.40) laneLeft();
+            else if (x > W * 0.60) laneRight();
+            else dash();
         }
 
-        // ---------- Drawing helpers ----------
+        function rectOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+            return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+        }
+
+        function spawnObstacle() {
+            // spawn in random lane with a bit of variation
+            const lane = Math.floor(Math.random() * lanes);
+            const x = laneCenterX(lane);
+            const size = 34 + Math.random() * 18;
+            obstacles.push({
+                lane,
+                x,
+                y: roadTop - 80,
+                w: size,
+                h: size,
+                vy: speed + Math.random() * 90,
+                hue: 10 + Math.random() * 25, // warm red/orange
+                rot: (Math.random() * 2 - 1) * 1.2,
+                a: Math.random() * Math.PI * 2,
+                passed: false,
+            });
+        }
+
+        // --------- Drawing helpers ----------
         function roundedRect(x, y, w, h, r) {
             const rr = Math.min(r, w / 2, h / 2);
             c.beginPath();
@@ -173,21 +172,50 @@ export const knifeThrower = {
         }
 
         function drawBackground(t) {
+            // inner gradient
             const g = c.createLinearGradient(0, 0, 0, H);
             g.addColorStop(0, "rgba(0,0,0,0.00)");
             g.addColorStop(1, "rgba(0,0,0,0.22)");
             c.fillStyle = g;
             c.fillRect(0, 0, W, H);
 
-            const off = (t * 0.08) % 22;
-            c.strokeStyle = "rgba(255,255,255,0.04)";
-            c.lineWidth = 1;
-            for (let y = -30; y < H + 30; y += 22) {
+            // lane glow lines
+            c.save();
+            c.strokeStyle = "rgba(80,220,255,0.10)";
+            c.lineWidth = 3;
+
+            for (let i = 1; i < lanes; i++) {
+                const x = laneCenterX(i - 1) + (laneCenterX(i) - laneCenterX(i - 1)) / 2;
                 c.beginPath();
-                c.moveTo(0, y + off);
-                c.lineTo(W, y + off);
+                c.moveTo(x, roadTop);
+                c.lineTo(x, roadBot);
                 c.stroke();
             }
+
+            // road edges
+            c.strokeStyle = "rgba(255,255,255,0.10)";
+            c.lineWidth = 2;
+            c.beginPath();
+            c.moveTo(W * 0.18, roadTop);
+            c.lineTo(W * 0.18, roadBot);
+            c.moveTo(W * 0.82, roadTop);
+            c.lineTo(W * 0.82, roadBot);
+            c.stroke();
+
+            // moving dashes
+            const off = (t * speed * 0.02) % 80;
+            c.strokeStyle = "rgba(255,255,255,0.08)";
+            c.lineWidth = 2;
+            for (let i = 0; i < lanes; i++) {
+                const x = laneCenterX(i);
+                for (let y = roadTop - 80; y < roadBot + 80; y += 80) {
+                    c.beginPath();
+                    c.moveTo(x, y + off);
+                    c.lineTo(x, y + off + 26);
+                    c.stroke();
+                }
+            }
+            c.restore();
         }
 
         function drawParticles(dt) {
@@ -212,17 +240,78 @@ export const knifeThrower = {
             }
         }
 
-        function drawHUD() {
+        function drawPlayer() {
+            const px = player.x - player.w / 2;
+            const py = player.y - player.h / 2;
+
+            // shadow
+            c.fillStyle = "rgba(0,0,0,0.30)";
+            c.beginPath();
+            c.ellipse(player.x, player.y + 30, 18, 6, 0, 0, Math.PI * 2);
+            c.fill();
+
+            // trail during dash
+            if (player.dashT > 0) {
+                c.save();
+                c.fillStyle = "rgba(80,220,255,0.10)";
+                roundedRect(px - 26, py + 8, 22, player.h - 16, 10);
+                c.fill();
+                c.restore();
+            }
+
             c.save();
-            c.fillStyle = "rgba(255,255,255,0.86)";
-            c.font = "800 18px system-ui, Arial";
-            c.fillText(`Level: ${level}`, 22, 34);
+            c.translate(player.x, player.y);
+            c.rotate(player.tilt);
+            c.translate(-player.x, -player.y);
 
-            c.fillStyle = "rgba(255,255,255,0.70)";
-            c.font = "600 14px system-ui, Arial";
-            c.fillText(`Treffer: ${hits}/${knivesTotal}`, 22, 58);
+            c.shadowColor = "rgba(120,180,255,0.55)";
+            c.shadowBlur = player.dashT > 0 ? 28 : 18;
 
+            const g = c.createLinearGradient(px, py, px + player.w, py + player.h);
+            g.addColorStop(0, "rgba(140,180,255,0.95)");
+            g.addColorStop(1, "rgba(60,120,255,0.75)");
+            c.fillStyle = g;
+
+            roundedRect(px, py, player.w, player.h, 12);
+            c.fill();
             c.restore();
+
+            // eyes
+            c.fillStyle = "rgba(255,255,255,0.55)";
+            roundedRect(px + 10, py + 12, 6, 6, 3);
+            c.fill();
+            roundedRect(px + 24, py + 12, 6, 6, 3);
+            c.fill();
+        }
+
+        function drawObstacles() {
+            for (const o of obstacles) {
+                const x = o.x - o.w / 2;
+                const y = o.y - o.h / 2;
+
+                c.save();
+                c.translate(o.x, o.y);
+                c.rotate(o.a);
+                c.translate(-o.x, -o.y);
+
+                c.shadowColor = `hsla(${o.hue}, 90%, 60%, 0.45)`;
+                c.shadowBlur = 18;
+
+                const gg = c.createLinearGradient(x, y, x + o.w, y + o.h);
+                gg.addColorStop(0, `rgba(255,140,120,0.92)`);
+                gg.addColorStop(1, `rgba(255,70,70,0.70)`);
+                c.fillStyle = gg;
+
+                roundedRect(x, y, o.w, o.h, 12);
+                c.fill();
+
+                c.shadowBlur = 0;
+                c.fillStyle = "rgba(255,255,255,0.16)";
+                roundedRect(x + 5, y + 6, Math.max(6, o.w * 0.22), o.h - 12, 10);
+                c.fill();
+
+                c.restore();
+            }
         }
 
         function drawStartOverlay() {
@@ -234,155 +323,12 @@ export const knifeThrower = {
 
             c.fillStyle = "rgba(255,255,255,0.92)";
             c.font = "900 22px system-ui, Arial";
-            c.fillText("Knife Thrower", 28, 46);
+            c.fillText("Runaway Runner", 28, 46);
 
             c.fillStyle = "rgba(255,255,255,0.78)";
             c.font = "500 16px system-ui, Arial";
-            c.fillText("SPACE/Klick zum Starten", 28, 78);
-            c.fillText("Wirf Messer – triff keine anderen Messer!", 28, 102);
-
-            c.restore();
-        }
-
-        function drawKnifeAtLocalAngle(aLocal, r) {
-            // local angle (target coordinates)
-            // Knife points outward from center at angle
-            const len = r * 0.90;
-            const w = 6; // slimmer looks better & plays better
-
-            c.save();
-            c.translate(cx, cy);
-            c.rotate(rot + aLocal);
-
-            // blade
-            c.save();
-            c.shadowColor = "rgba(255,255,255,0.22)";
-            c.shadowBlur = 10;
-
-            const gg = c.createLinearGradient(0, -len, 0, 0);
-            gg.addColorStop(0, "rgba(255,255,255,0.92)");
-            gg.addColorStop(1, "rgba(255,255,255,0.15)");
-            c.fillStyle = gg;
-
-            roundedRect(-w / 2, -len, w, len - 12, 6);
-            c.fill();
-            c.restore();
-
-            // tip
-            c.fillStyle = "rgba(255,255,255,0.78)";
-            c.beginPath();
-            c.moveTo(0, -len - 10);
-            c.lineTo(-w / 2, -len + 2);
-            c.lineTo(w / 2, -len + 2);
-            c.closePath();
-            c.fill();
-
-            // handle
-            c.shadowColor = "rgba(80,220,255,0.35)";
-            c.shadowBlur = 10;
-            c.fillStyle = "rgba(80,220,255,0.22)";
-            roundedRect(-w / 2, -10, w, 18, 6);
-            c.fill();
-
-            c.restore();
-        }
-
-        function drawTarget() {
-            // target disc + stuck knives
-            // draw in world space but knives are drawn via helper above (rot + local angle)
-
-            // outer glow
-            c.save();
-            c.shadowColor = "rgba(80,220,255,0.22)";
-            c.shadowBlur = 26;
-            c.fillStyle = "rgba(0,0,0,0.16)";
-            c.beginPath();
-            c.arc(cx, cy, baseR + 18, 0, Math.PI * 2);
-            c.fill();
-            c.restore();
-
-            // disc
-            c.save();
-            c.translate(cx, cy);
-            c.rotate(rot);
-
-            const discG = c.createRadialGradient(-baseR * 0.35, -baseR * 0.35, baseR * 0.2, 0, 0, baseR);
-            discG.addColorStop(0, "rgba(210,160,110,0.95)");
-            discG.addColorStop(1, "rgba(120,80,45,0.90)");
-            c.fillStyle = discG;
-            c.beginPath();
-            c.arc(0, 0, baseR, 0, Math.PI * 2);
-            c.fill();
-
-            c.strokeStyle = "rgba(0,0,0,0.22)";
-            c.lineWidth = 4;
-            for (let r = baseR * 0.25; r < baseR; r += baseR * 0.25) {
-                c.beginPath();
-                c.arc(0, 0, r, 0, Math.PI * 2);
-                c.stroke();
-            }
-
-            c.fillStyle = "rgba(80,220,255,0.20)";
-            c.beginPath();
-            c.arc(0, 0, baseR * 0.14, 0, Math.PI * 2);
-            c.fill();
-
-            c.restore();
-
-            // stuck knives: use radius slightly INSIDE the disc edge
-            const stuckR = baseR - 10;
-            for (const aLocal of stuck) {
-                drawKnifeAtLocalAngle(aLocal, stuckR);
-            }
-
-            // feedback flash
-            if (flashGood > 0) {
-                c.save();
-                c.fillStyle = `rgba(80,220,255,${0.16 * (flashGood / 0.20)})`;
-                c.fillRect(0, 0, W, H);
-                c.restore();
-            }
-            if (flashBad > 0) {
-                c.save();
-                c.fillStyle = `rgba(255,90,90,${0.18 * (flashBad / 0.24)})`;
-                c.fillRect(0, 0, W, H);
-                c.restore();
-            }
-        }
-
-        function drawFlyingKnife() {
-            const x = fly.x;
-            const y = fly.y;
-
-            c.save();
-            c.translate(x, y);
-
-            c.shadowColor = "rgba(255,255,255,0.28)";
-            c.shadowBlur = 14;
-
-            const bladeLen = 120;
-            const w = 8;
-
-            const g = c.createLinearGradient(0, -bladeLen, 0, 0);
-            g.addColorStop(0, "rgba(255,255,255,0.92)");
-            g.addColorStop(1, "rgba(255,255,255,0.15)");
-            c.fillStyle = g;
-            roundedRect(-w / 2, -bladeLen, w, bladeLen - 16, 7);
-            c.fill();
-
-            c.fillStyle = "rgba(255,255,255,0.78)";
-            c.beginPath();
-            c.moveTo(0, -bladeLen - 12);
-            c.lineTo(-w / 2, -bladeLen + 2);
-            c.lineTo(w / 2, -bladeLen + 2);
-            c.closePath();
-            c.fill();
-
-            c.shadowColor = "rgba(80,220,255,0.35)";
-            c.shadowBlur = 12;
-            c.fillStyle = "rgba(80,220,255,0.22)";
-            roundedRect(-w / 2, -8, w, 20, 7);
-            c.fill();
+            c.fillText("Klicke oder drücke eine Taste zum Starten", 28, 78);
+            c.fillText("Lane: A/D oder ←/→ ", 28, 102);
 
             c.restore();
         }
@@ -393,110 +339,78 @@ export const knifeThrower = {
             const dt = Math.min(0.033, (t - lastTime) / 1000);
             lastTime = t;
 
-            flashGood = Math.max(0, flashGood - dt);
-            flashBad = Math.max(0, flashBad - dt);
-            shake = Math.max(0, shake - dt);
-
             if (started) {
-                // rotation smoothing
-                rotVel += (rotVelTarget - rotVel) * (1 - Math.pow(0.02, dt));
-                rot += rotVel * dt;
+                timeAlive += dt;
+                speed = Math.min(860, 360 + timeAlive * 28);
 
-                // occasional velocity target change
-                if (Math.random() < 0.010) {
-                    const base = 1.0 + level * 0.12;
-                    rotVelTarget = (Math.random() < 0.5 ? -1 : 1) * (base + Math.random() * 0.55);
+                // lane smooth move
+                const targetX = laneCenterX(player.laneTarget);
+                player.x += (targetX - player.x) * (1 - Math.pow(0.0002, dt));
+                // tilt based on movement
+                const dx = targetX - player.x;
+                player.tilt = clamp(dx / 280, -0.25, 0.25);
+
+                // dash timers
+                if (player.dashT > 0) player.dashT -= dt;
+                if (player.dashCd > 0) player.dashCd -= dt;
+
+                // spawns
+                spawnT -= dt;
+                const rate = Math.max(0.20, 0.70 - timeAlive * 0.03);
+                if (spawnT <= 0) {
+                    spawnObstacle();
+                    spawnT = rate;
                 }
-            }
 
-            // update flying knife
-            if (started && fly.active) {
-                fly.y += fly.vy * dt;
+                // update obstacles
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const o = obstacles[i];
+                    o.vy = speed + 60 + Math.random() * 60;
+                    o.y += o.vy * dt;
+                    o.a += o.rot * dt;
 
-                // When reaching target edge => attempt stick
-                const hitLine = cy + baseR - 8; // slightly inside disc edge
-                if (fly.y <= hitLine) {
-                    // Incoming knife is coming from bottom to center.
-                    // In world space it points "up" into the disc. The outward direction at bottom is +90deg.
-                    // So knife should stick at world angle = +90deg.
-                    const aWorld = Math.PI / 2;
-
-                    // Convert to target-local angle (remove current rotation)
-                    const aLocal = wrapAngle(aWorld - rot);
-
-                    // Collision check with existing stuck knives (angle spacing)
-                    // 0.20 rad ~ 11.5 degrees: good balance
-                    let collide = false;
-                    for (const s of stuck) {
-                        const d = Math.abs(wrapAngle(aLocal - s));
-                        if (d < 0.20) { collide = true; break; }
-                    }
-
-                    if (collide) {
-                        spawnParticles(cx, hitLine, 46, 640, false);
-                        flashBad = 0.24;
-                        shake = 0.20;
-                        fly.active = false;
-                        gameOver("Messer getroffen!");
-                        return;
-                    }
-
-                    // success
-                    stuck.push(aLocal);
-                    hits += 1;
-
-                    score += 160 + Math.floor(level * 14);
-                    ctx.callbacks?.onScore?.(score);
-
-                    spawnParticles(cx, hitLine, 28, 520, true);
-                    flashGood = 0.20;
-
-                    fly.active = false;
-
-                    // Level cleared?
-                    if (hits >= knivesTotal) {
-                        // bonus
-                        score += 250 + level * 40;
+                    // passed score
+                    if (!o.passed && o.y > player.y + 40) {
+                        o.passed = true;
+                        score += 140;
                         ctx.callbacks?.onScore?.(score);
-
-                        // next level after short flash
-                        setupLevel(level + 1);
                     }
-                }
-            }
 
-            // passive score
-            if (started) {
-                score += Math.floor(12 * dt);
+                    if (o.y > roadBot + 120) obstacles.splice(i, 1);
+                }
+
+                // collision (unless dash active)
+                if (player.dashT <= 0) {
+                    const px = player.x - player.w / 2;
+                    const py = player.y - player.h / 2;
+                    for (const o of obstacles) {
+                        const ox = o.x - o.w / 2;
+                        const oy = o.y - o.h / 2;
+                        if (rectOverlap(px, py, player.w, player.h, ox, oy, o.w, o.h)) {
+                            spawnParticles(player.x, player.y, 48, 640, false);
+                            running = false;
+                            ctx.callbacks?.onGameOver?.({ score, reason: "Crash!" });
+                            return;
+                        }
+                    }
+                } else {
+                    // small bonus while dashing
+                    score += Math.floor(30 * dt);
+                    ctx.callbacks?.onScore?.(score);
+                }
+
+                // time score
+                score += Math.floor(45 * dt);
                 ctx.callbacks?.onScore?.(score);
             }
 
             // draw
             c.clearRect(0, 0, W, H);
-
-            if (shake > 0) {
-                const mag = 10 * (shake / 0.20);
-                const sx = (Math.random() * 2 - 1) * mag;
-                const sy = (Math.random() * 2 - 1) * mag;
-                c.save();
-                c.translate(sx, sy);
-
-                drawBackground(t);
-                drawParticles(dt);
-                drawHUD();
-                drawTarget();
-                if (fly.active) drawFlyingKnife();
-                drawStartOverlay();
-
-                c.restore();
-            } else {
-                drawBackground(t);
-                drawParticles(dt);
-                drawHUD();
-                drawTarget();
-                if (fly.active) drawFlyingKnife();
-                drawStartOverlay();
-            }
+            drawBackground(t);
+            drawParticles(dt);
+            drawObstacles();
+            drawPlayer();
+            drawStartOverlay();
 
             raf = requestAnimationFrame(loop);
         }
@@ -507,9 +421,9 @@ export const knifeThrower = {
                 running = true;
                 started = false;
 
-                resetAll();
-
+                reset();
                 lastTime = performance.now();
+
                 window.addEventListener("keydown", onKeyDown, { passive: false });
                 canvas.addEventListener("pointerdown", onPointerDown);
 

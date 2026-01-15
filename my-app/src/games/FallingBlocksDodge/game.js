@@ -1,7 +1,7 @@
 export const fallingBlocksDodge = {
     id: "dodge",
     name: "Falling Blocks Dodge",
-    controls: "←/→ oder A/D | SPACE = Dash",
+    controls: "←/→ oder A/D",
 
     create(ctx) {
         const canvas = document.createElement("canvas");
@@ -219,6 +219,35 @@ export const fallingBlocksDodge = {
             c.fill();
             c.restore();
 
+            // ✅ EYES (Smiley look like Jumper)
+            c.save();
+
+            // eyes color
+            c.fillStyle = "rgba(248, 248, 248, 0.75)";
+
+            const cx = player.x;
+            const cy = player.y;
+            const r = Math.min(player.w, player.h) / 2;
+
+            const eyeY = cy - r * 0.10;
+            const eyeDX = r * 0.28;
+            const eyeR = Math.max(2.2, r * 0.12);
+
+            c.beginPath();
+            c.arc(cx - eyeDX, eyeY, eyeR, 0, Math.PI * 2);
+            c.arc(cx + eyeDX, eyeY, eyeR, 0, Math.PI * 2);
+            c.fill();
+
+            // tiny highlights
+            c.fillStyle = "rgba(255,255,255,0.45)";
+            c.beginPath();
+            c.arc(cx - eyeDX - eyeR * 0.25, eyeY - eyeR * 0.25, eyeR * 0.35, 0, Math.PI * 2);
+            c.arc(cx + eyeDX - eyeR * 0.25, eyeY - eyeR * 0.25, eyeR * 0.35, 0, Math.PI * 2);
+            c.fill();
+
+
+            c.restore();
+
             // dash trail hint
             if (player.dash > 0) {
                 c.save();
@@ -228,6 +257,7 @@ export const fallingBlocksDodge = {
                 c.restore();
             }
         }
+
 
         function drawBlocks() {
             for (const b of blocks) {
@@ -271,7 +301,7 @@ export const fallingBlocksDodge = {
             c.fillStyle = "rgba(255,255,255,0.78)";
             c.font = "500 16px system-ui, Arial";
             c.fillText("SPACE/Klick zum Starten", 28, 78);
-            c.fillText("Bewege dich: ←/→ oder A/D   |   Dash: SPACE", 28, 102);
+            c.fillText("Bewege dich: ←/→ oder A/D", 28, 102);
 
             c.restore();
         }

@@ -12,9 +12,14 @@ export default function Home() {
       <div className="homeGrid">
         {GAMES.map((g) => (
           <Link key={g.id} to={`/play/${g.id}`} className="homeCard">
-            <div className="homeCardIcon" />
-            <div className="homeCardName">{g.name}</div>
-            <div className="homeCardMeta">{g.controls ?? " "}</div>
+            <div className="homeCover">
+              <img src={g.thumbnail} alt={g.name} className="homeCoverImg" draggable={false} />
+
+              {/* Overlay Text (nicht im Thumbnail) */}
+              <div className="homeCoverInfo">
+                <div className="homeCoverName">{g.name}</div>
+              </div>
+            </div>
           </Link>
         ))}
       </div>

@@ -326,3 +326,149 @@ body {
   font-size: 12px;
   opacity: .65;
 }
+
+/* (ALT) homeCardIcon brauchst du nicht mehr – falls du es noch im JSX hast:
+   kannst du es löschen oder so lassen. Wenn du es nicht mehr verwendest, kann es weg. */
+.homeCardIcon {
+  display: none;
+}
+
+.homeThumb {
+  display: none;
+}
+
+/* GRID */
+.homeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px;
+}
+
+/* LINK */
+.homeCard {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* COVER CARD = clean, premium */
+.homeCover {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+/* Thumbnail füllt komplett */
+.homeCoverImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  transform: none;
+  /* weniger busy */
+  filter: saturate(1.12) contrast(1.08) brightness(1.02);
+
+  transition: transform .18s ease;
+}
+
+/* Dezenter Verlauf OBEN für Text – unten bleibt frei fürs Bild */
+.homeCover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.10), transparent 55%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.00) 55%);
+  pointer-events: none;
+}
+
+/* Text als "Glass Pill" oben – viel cleaner */
+.homeCoverInfo {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+
+/* Name = immer sichtbar */
+.homeCoverName {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 10px 22px rgba(0, 0, 0, 0.65);
+
+  /* Text-Layout */
+  line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
+
+  /* ✅ Multi-line clamp (modern + webkit) */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  /* ← das will VS Code */
+}
+
+
+
+/* Controls = nur beim Hover sichtbar (sonst wirkt’s überladen) */
+.homeCoverMeta {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(8px);
+
+  font-size: 12.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 10px 22px rgba(0, 0, 0, 0.65);
+
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: .18s ease;
+
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hover: lift + premium glow */
+.homeCard:hover .homeCover {
+  transform: translateY(-5px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.62);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Hover: leichter Zoom */
+.homeCard:hover .homeCoverImg {
+  transform: scale(1.04);
+}
+
+/* Hover: Controls erscheinen */
+.homeCard:hover .homeCoverMeta {
+  opacity: 1;
+  transform: translateY(0);
+}
